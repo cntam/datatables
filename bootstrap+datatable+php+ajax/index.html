@@ -1,0 +1,490 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<link href="http://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+	<!-- <link rel="stylesheet" href="http://cdn.datatables.net/1.10.13/css/jquery.dataTables.min.css"> -->
+	<link href="./css/dataTables.bootstrap.min.css" rel="stylesheet">
+	<link href="./css/dataTables.bootstrap4.min.css" rel="stylesheet">
+	<link href="./css/daterangepicker.css" rel="stylesheet" media="screen">
+
+
+	<script src="./js/jquery-3.1.1.min.js"></script>
+	<script src="./js/jquery.dataTables.min.js"></script>
+	<script src="./js/dataTables.bootstrap.min.js"></script>
+	<script src="./js/moment.min.js"></script>
+	<script src="./js/daterangepicker.js" charset="UTF-8"></script>
+	<style>
+		.classA:hover{ text-decoration:none;}
+		td.highlight {
+			background-color: red !important;
+		}
+		tr.am-primary{
+			background-color: yellow !important;
+		}
+
+		.showul label {
+            display: block;
+            margin: 3px 0;
+        }
+
+        .showul {
+            padding: 10px 15px;
+        }
+
+        .graph i {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+        }
+
+        ul.showul li:not(:last-child) {
+            border-bottom: 1px dashed #ccc;
+        }
+	</style>
+</head>
+<body>
+	
+	<div class="container">
+		<div class="well">
+			<form class="form-inline" action="javascript:void(0);" id="search_form" role="form">
+		      	<div class="input-group" id="id_search_date" style="width:41%">
+		            <span>按开站时间查询：</span>
+		            <span class="add-on input-group-addon">
+		            	<i class="glyphicon glyphicon-calendar fa fa-calendar" style="font-size: 18px"></i>
+		            </span>
+		            <input type="text" readonly style="width:220px" name="reportrange" id="reportrange" class="form-control" value=""/>
+		            &nbsp;&nbsp;
+		            <button type="button" id="reset" class="btn-sm btn-primary">复位</button>
+		        </div>
+		        <div class="form-group">
+                    <label class="sr-only" for="key_value">关键字</label>
+                    <input type="text" class="form-control fa fa-dashboard" id="key_value" name="kw" value="" placeholder="请输入关键字">
+                </div>
+
+                <button type="submit" id="search_submit" class="btn btn-success">搜索</button>
+
+                <div style="position:relative; z-index:9999; height:100%; width: 200px; float: right; margin-left: 12px;">
+                    <button class="btn btn-default showcol">列段显示/隐藏</button>
+                    <ul class="showul" style=" list-style:none;display:none; position:absolute; left:118px; top:10px; background:#FFFFFF; border:1px solid #ccc; width:106px;">
+                        <li><label><input type="checkbox" class="toggle-vis" checked data-column="2"/>姓名</label></li>
+                        <li><label><input type="checkbox" class="toggle-vis" checked data-column="4"/>age</label></li>
+                        <li><label><input type="checkbox" class="toggle-vis" checked data-column="5"/>性别</label></li>
+                        <li><label><input type="checkbox" class="toggle-vis" checked data-column="6"/>薪水</label></li>
+                        <li><label><input type="checkbox" class="toggle-vis" checked data-column="7"/>地址</label></li>
+                        <li><label><input type="checkbox" class="toggle-vis" checked data-column="8"/>备注</label></li>
+                    </ul>
+                </div>
+	    	</form>
+	    </div>  
+		<table id="DataTable" class="display table table-striped table-bordered">
+		    <thead>
+                <tr>
+                	<th><input type="checkbox" name="checklist" id="checkAll"></th>
+                	<th>id</th>
+                    <th>姓名</th>
+                    <th>密码</th>
+                    <th>age</th>
+                    <th>性别</th>
+                    <th>薪水</th>
+                    <th>地址</th>
+                    <th>备注</th>
+                    <th>创建时间</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+		</table>
+	</div>
+    <script>
+    	$(function(){
+
+    		/******初始化DataTable*****************************************************************************/
+	        var table = $('#DataTable').DataTable({
+	        	"processing": true,		//显示加载信息
+	            "serverSide": true,		//开启服务器模式
+	            "searching": true,		//开启搜索功能
+
+	            "autoWidth" : true, 	//让Datatables自动计算宽度
+	            "searching":false,		//开启全局搜索功能
+	            "lengthMenu": [5, 10, 20, 30],		//改变每页显示条数列表的选项
+	            "pagingType":"full_numbers",		//分页按钮种类显示选项
+	            "order": [[1, "asc"]],				//表格初始化排序【全选框不用排序】
+	            "language": {
+			        "processing": "玩命加载中...",
+			        "lengthMenu": "显示 _MENU_ 项结果",
+			        "zeroRecords": "没有匹配结果",
+			        
+			        "search": "搜索:",
+			        "url": "",
+			        "emptyTable": "表中数据为空",
+			        "loadingRecords": "正在加载数据...",
+
+			        //下面三者构成了总体的左下角的内容。
+			        "info": "显示第 _START_ 至 _END_ 项结果，共 _TOTAL_ 项",
+			        "infoEmpty": "显示第 0 至 0 项结果，共 0 项",
+			        "infoFiltered": "(由 _MAX_ 项结果过滤)",
+			        //"infoPostFix": "",
+
+			        "paginate": {
+			            "first": "首页",
+			            "previous": "上一页",
+			            "next": "下一页",
+			            "last": "尾页"
+			        },
+			    },
+
+	            "ajax": {
+	                "url": "./server.php",
+	                "type": "POST",
+				    "data": {						//添加额外的参数发送到服务器(可以用作搜索条件)
+				        extra_search : 3,
+				        date:$("#reportrange").val(),
+				        //createtime:1,
+				    },
+				    /*"data": function ( d ) {		//添加额外的参数发送到服务器(可以用作搜索条件)
+				        d.extra_search = 3;
+				    },*/
+	            },
+	            "columns":[
+	            	{
+	            		"data":null,
+	            		"orderable":false,  //禁止排序
+	            		"title": "<input type='checkbox' name='checklist' id='checkAll' />",
+	            	},
+			      	{"data":"id"},
+			      	{
+			      		"data":"name",
+			      		"class": 'details-control'
+			      		/*render: function(data, type, row, meta) {
+				            //type 的值  dispaly sort filter
+				            //代表，是显示类型的时候判断值的长度是否超过8，如果是则截取
+				            //这里只处理了类型是显示的，过滤和排序返回原始数据
+				            if (type === 'display') {
+				                if (data.length > 8) {
+				                    return '<span title="' + data + '">' + data.substr(0, 7) + '...</span>';
+				                } else {
+				                    return '<span title="' + data + '>' + data + '</span>';
+				                }
+				            }
+				            return data;
+				        }*/
+			      	},
+			      	{"data":"password"},
+			      	{"data":"age"},
+			      	{"data":"sex","orderable":false,"class": 'details-control'},
+			      	{"data":"salary","class": 'details-control'},
+			      	{"data":"address","orderable":false,"class": 'details-control'},
+			      	{"data":"remark","orderable":false,"class": 'details-control'},
+			      	{"data":"createtime","class": 'details-control'},
+			      	{"data":null,"orderable":false }
+			  	],
+			  	"columnDefs": [
+			  		{
+				  		"targets": 0, //改写哪一列
+					    "render": function ( data, type, row, meta ) {
+					      	return "<input type='checkbox' name='checkList' id='row_"+row.id+"' />";
+					    }
+					},
+			  		{
+				  		"targets": 2, //改写哪一列
+					    "data": "name",
+					    "render": function ( data, type, row, meta ) {
+					      		return '<a href="'+row.id+'" class="classA">'+data+'</a>';
+					    }
+					},
+					{
+						"targets": 3,
+						"data": "password",
+						"visible":false //隐藏列
+					},
+					{
+						"targets": 5,
+						"data": "sex",
+						render: function(data, type, row, meta) {	
+					      		var node = "<label ";
+					      		    if (data == "男") {
+					      		        node += "style='color:red;'"
+					      		    } else if (data == "女") {
+					      		        node += "style='color:green;'"
+					      		    } else {
+					      		        node += "style='color:#000;'"
+					      		    }
+					      		    node += ">" + data + "</label>";
+					      		    return node;
+					    }	
+					},
+					{
+						"targets": 6,
+						"data": "salary",
+						"render": function ( data, type, row, meta ) {		//格式化数字显示格式
+					      		return '<span style="color:red;font-size:1.1em;">¥</span>'+fmoney(data,2);
+					    }	
+					},
+					{
+						"targets":8,
+						"data":"remark",
+						"render": function ( data, type, row, meta ) {
+						    /*return type === 'display' && data.length > 20 ?
+						        '<span title="'+data+'">'+data.substr( 0, 19 )+'<i style="color:red;">...</i></span>' : data;*/
+						        return '<spn style="width:100px;overflow: hidden;text-overflow: ellipsis;" title="'+data +'">'+data+'</span>';
+						}	
+					},
+					{
+						"targets":10,
+						"serchable":false,
+						"render": function ( data, type, row, meta ) {
+							//data:当前cell的值  --主要是操作这个参数来做渲染
+						    //type:数据类型,枚举类型dt内置定义的  --用处不大
+						    //row:当前行的所有数据  --可以做来用级联(没办法更改其他cell的渲染)
+						    //meta:它下面有三个参数
+						       //row,col 是当前cell的横纵坐标(相对于左上角) --可以结合上个参数row做更加复杂的级联
+						       //settings:dt的api实例,动态所有的参数信息都在里面  --这个很强大,获取参数信息就好,新手不要随便更改里面的参数信息
+						    // return '<a type="button" class="btn btn-primary edit-btn">修改</a> <a type="button" class="btn btn-danger" href="#" onclick="del(\''+row.id+'\')">删除</a>';
+						    return '<button class="edit-btn" type="button">编辑</button>';
+						}	
+					}
+				],
+
+
+	        });
+			/******初始化DataTable*****************************************************************************/
+
+			//高亮列
+			$('#DataTable tbody').on( 'mouseenter', 'td', function () {
+				var colIdx = table.cell(this).index().column;
+
+				$( table.cells().nodes() ).removeClass( 'highlight' );
+				$( table.column( colIdx ).nodes() ).addClass( 'highlight' );
+			} );
+			//高亮行
+			$('#DataTable tbody').on( 'mouseenter', 'tr', function () {
+	 
+	            if ($(this).hasClass('am-primary') ) {
+	                $(this).removeClass('am-primary');
+	            }else {
+	                table.$('tr.am-primary').removeClass('am-primary');
+	                $(this).addClass('am-primary');
+	            }
+	        });
+
+			/****列、行高亮********************************************************************************/
+
+			/****行内编辑********************************************************************************/	
+			$("#DataTable tbody").on("click",".edit-btn",function(){
+	           	var tds=$(this).parents("tr").children();
+   	          	$.each(tds, function(i,val){
+   	              	var jqob=$(val);
+   	              	if(i < 1 || jqob.has('button').length ){return true;}//跳过第1项 序号,按钮
+   	              	var txt=jqob.text();
+   	              	if(txt.indexOf("¥") >= 0 ){
+					    txt =txt.replace("¥","");
+					}
+   	              	var put=$("<input type='text' style='width:80px;'>");
+   	              	put.val(txt);
+   	              	jqob.html(put);
+   	          	});
+   	          	$(this).html("保存");
+   	          	$(this).toggleClass("edit-btn");
+   	          	$(this).toggleClass("save-btn");
+	        });
+	        $("#DataTable tbody").on("click",".save-btn",function(){
+	            var row=table.row($(this).parents("tr"));
+              	var tds=$(this).parents("tr").children();
+              	$.each(tds, function(i,val){
+                  	var jqob=$(val);
+                  	//把input变为字符串
+                  	if(!jqob.has('button').length){
+                      	var txt=jqob.children("input").val();
+                      	jqob.html(txt);
+                      	table.cell(jqob).data(txt);//修改DataTables对象的数据
+                  	}
+              	});
+              	var data=row.data();
+              	$.ajax({
+	                "url":"./update.php",
+	                "data":data,
+	                "type":"post",
+	                "error":function(){
+	                    alert("服务器未正常响应，请重试");
+	                },
+	                "success":function(response){
+	                    alert(response);
+	                }
+	            });
+	            $(this).html("编辑");
+	           	$(this).toggleClass("edit-btn");
+	           	$(this).toggleClass("save-btn");
+	        });
+			/****行内编辑********************************************************************************/
+
+			/****展开查看详情**********************************************************************************/
+			$("#DataTable").find("tbody").on('click', 'td.details-control', function () {
+                var tr = $(this).closest('tr');
+                var row = table.row(tr);
+                if (row.child.isShown()) {
+                    // This row is already open - close it
+                    row.child.hide();
+                    tr.removeClass('shown');
+                }
+                else {
+                    // Open this row
+                    row.child(format(row.data())).show();
+                    tr.addClass('shown');
+                }
+            });
+
+
+			/*****checkbox全选**************************************************************************************/
+          	$("#checkAll").on("click", function () {
+              	if ($(this).prop("checked") === true) {
+                  	$("input[name='checkList']").prop("checked", $(this).prop("checked"));
+                  	$('#DataTable tbody tr').addClass('selected');
+              	} else {
+                  	$("input[name='checkList']").prop("checked", false);
+                  	$('#DataTable tbody tr').removeClass('selected');
+              	}
+          	});
+
+          	/*****时间插件************************************************************************************************/
+            var start = moment().subtract(29, 'days'); 
+            var end = moment();
+            function cb(start, end) {
+                $('#reportrange span').html(start.format('YYYY-MMMM-D') + ' - ' + end.format('YYYY-MMMM-D'));
+            }
+            $('#reportrange').daterangepicker({  
+                //minDate: '01/01/2012',    			//最小时间  
+                //maxDate : moment(), 					//最大时间
+                //dateLimit : { days : 30 }, 			//起止时间的最大间隔
+                showDropdowns : true,
+                // timePicker : true, 					//是否显示小时和分钟  
+                "linkedCalendars": false,
+                "showCustomRangeLabel": false,
+                "alwaysShowCalendars": true,
+                "opens": "right",    					//日期选择框的弹出位置  
+                startDate: start,
+                endDate: end,
+                ranges: {
+                	//'最近1小时': [moment().subtract('hours',1), moment()],
+                    '今天': [moment(), moment()],
+                    '昨天': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                    '最近7天': [moment().subtract(6, 'days'), moment()],
+                    '最近30天': [moment().subtract(29, 'days'), moment()],
+                    '本月': [moment().startOf('month'), moment().endOf('month')],
+                    '上个月': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                },
+                locale : {  
+                    applyLabel : '确定',  
+                    cancelLabel : '取消',  
+                    fromLabel : '起始时间',  
+                    toLabel : '结束时间',  
+                    customRangeLabel : '自定义',  
+                    daysOfWeek : [ '日', '一', '二', '三', '四', '五', '六' ],  
+                    monthNames : [ '一月', '二月', '三月', '四月', '五月', '六月',  
+                            '七月', '八月', '九月', '十月', '十一月', '十二月' ],  
+                    firstDay : 1  
+                },
+                buttonClasses : [ 'btn btn-default' ],  
+                applyClass : 'btn-small btn-primary blue',  
+                cancelClass : 'btn-small',
+            }, cb);
+            cb(start, end);
+            //时间复位按钮
+            $("#reset").click(function () {
+                $('#reportrange').val(' ');
+            });
+            /*****时间插件************************************************************************************************/
+
+            /*****显示隐藏列********************************************************************************************/
+            $('.toggle-vis').on('change', function (e) {
+                e.preventDefault();
+                //console.log($(this).attr('data-column'));
+                var column = table.column($(this).attr('data-column'));
+                column.visible(!column.visible());
+            });
+
+            $('.showcol').click(function () {
+                $('.showul').toggle();
+                return false;
+            });
+            
+            
+          
+            /******给input绑定回车事件*******************************************************************************/
+            $('#key_value').bind('keypress', function (event) {
+                if (event.keyCode == "13") {
+                    $("#search_submit").submit();
+                    return false;
+                }
+            });
+
+            $("#search_form").submit(function () {
+                var search_query = $("#key_value").val();
+                //console.log(search_query);
+                table.ajax.url("./server.php?search_query=" + search_query).load();
+                return false;
+
+                
+            });
+
+    	});
+
+		/****点击查看详情************************************************************************************************/
+		function format(d) {
+            // `d` is the original data object for the row
+            var ss = '<table cellpadding="5" cellspacing="0" border="0" style="padding-left:50px;" class="cls_datatables">' +
+                    '<tr>' +
+                    '<td><strong>我的名字叫做：<\strong>'+d.name+'</td>' +
+                    '<td>我的薪水：' + d.salary + ' ,我的住址是：'+ d.address+'</td>' +
+                    '</tr>' +
+                    '</table>';
+            return ss;
+        }
+        /****点击查看详情************************************************************************************************/
+		
+		/********格式化数字显示格式***********************************************************************************/
+		function fmoney(s, n){   
+			n = n > 0 && n <= 20 ? n : 2;   
+			s = parseFloat((s + "").replace(/[^\d\.-]/g, "")).toFixed(n) + "";   
+			var l = s.split(".")[0].split("").reverse(),   
+			r = s.split(".")[1];   
+			t = "";   
+			for(i = 0; i < l.length; i ++ )   {   
+				t += l[i] + ((i + 1) % 3 == 0 && (i + 1) != l.length ? "," : "");   
+			} 
+			return t.split("").reverse().join("") + "." + r;   
+		}
+		/********格式化数字显示格式***********************************************************************************/
+
+		/********删除方法*********************************************************************************************/
+		function del(id) {
+		    $.ajax({
+		    	type:"post",
+		        data: { "id": id},
+		        url: "./del.php",
+		        dataType:"json",
+		        success: function(info){
+		            if (info.flag == '1') {
+		                //如果后台删除成功，则刷新表格，并提示用户删除成功
+		                //保留分页信息
+		                alert(info.msg);
+		                //table.ajax.reload(null, false);
+		                $('#DataTable').DataTable().draw(false);
+
+		            }
+		        }
+		    })
+		}
+		/********删除方法*********************************************************************************************/
+
+		//针对 选择内容下拉框 选中之后 ,点击其他地方不隐藏的问题解决
+		$(document).click(function(e){
+			$(document).find('.showul').each(function(){
+				if(e.target != this && !$.contains(this, e.target) && e.target!=$(this).prev().get(0)){
+					$(this).hide();
+				};
+			});
+		});
+    </script>
+</body>
+</html>
